@@ -132,5 +132,5 @@ export type Campaign = {
 
 export type CampaignGeneratedContent = Omit<
   Campaign,
-  "id" | "rawBrief" | "status" | "createdAt" | "updatedAt"
+  "id" | "rawBrief" | "status" | "createdAt" | "updatedAt"|"leads"
 >;
