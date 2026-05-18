@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CampaignPilot
 
-## Getting Started
+CampaignPilot is an autonomous campaign execution agent that turns a messy business brief into a launch-ready campaign funnel.
 
-First, run the development server:
+It generates a Launch Room containing:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Campaign strategy
+- Selected campaign angle
+- LinkedIn ad draft
+- Short-form video ad draft
+- Landing page preview
+- Lead capture form
+- Follow-up email sequence
+- Launch tasks
+- QA report
+- Claim safety report
+- Repair report
+- Exportable JSON and Markdown assets
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Why it matters
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Small businesses and agencies do not just need campaign ideas. They need launch-ready execution.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+CampaignPilot turns raw business context into practical campaign assets that can be reviewed, copied, exported, and launched.
 
-## Learn More
+## Demo flow
 
-To learn more about Next.js, take a look at the following resources:
+1. Open the campaign intake page.
+2. Paste a messy business brief or use the demo brief.
+3. Generate a Launch Room.
+4. Review the agent workflow.
+5. Open the landing page preview.
+6. Submit the lead capture form.
+7. Return to the Launch Room and view the captured lead.
+8. Export campaign assets as JSON or Markdown.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Gemini API
+- Browser localStorage for hackathon MVP persistence
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```txt
+User Brief
+   ↓
+Next.js Campaign Intake UI
+   ↓
+/api/campaigns/run
+   ↓
+Agent Workflow Orchestrator
+   ↓
+Gemini Model Calls
+   ↓
+Validation + Minimum Output Checks
+   ↓
+Claim Safety Check
+   ↓
+QA + Repair Layer
+   ↓
+Generated Campaign JSON
+   ↓
+Launch Room UI
+   ↓
+Landing Page Preview
+   ↓
+Lead Capture Form
+   ↓
+Export JSON / Markdown
