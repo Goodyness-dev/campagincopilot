@@ -5,7 +5,6 @@ import {
   buildLandingPagePrompt,
   buildPlatformDraftPrompt,
   buildStrategyPrompt,
-  buildTaskPrompt,
 } from "@/lib/ai/prompts";
 import { runClaimSafetyCheck } from "@/lib/utils/claimSafety";
 import { runQaAndRepair } from "@/lib/utils/genericDetector";
@@ -41,10 +40,6 @@ type LandingPageResult = {
 
 type EmailResult = {
   followUpEmails: FollowUpEmail[];
-};
-
-type TaskResult = {
-  tasks: string[];
 };
 
 function createInitialStages(): AgentStage[] {
@@ -87,6 +82,56 @@ function assertMinimumArrayLength<T>(
   if (!Array.isArray(value) || value.length < minimum) {
     throw new Error(`${label} must contain at least ${minimum} items.`);
   }
+}
+
+function normalize(value: string) {
+  return value.toLowerCase().trim();
+}
+
+function buildLocalLaunchTasks(input: {
+  parsedBrief: ParsedBrief;
+  selectedStrategy: SelectedStrategy;
+  platformDrafts: PlatformDrafts;
+  landingPage: LandingPage;
+  leadCapture: LeadCapture;
+  followUpEmails: FollowUpEmail[];
+}) {
+  const goal = normalize(input.parsedBrief.campaignGoal);
+  const platforms = input.parsedBrief.platforms.join(", ") || "selected channels";
+
+  const tasks = [
+    `Review and approve the selected campaign angle: "${input.selectedStrategy.title}".`,
+    "Confirm product name, pricing, proof points, and any customer examples before publishing.",
+    `Review the ${platforms} ad drafts for brand tone and final approval.`,
+    "Publish the generated landing page preview or connect it to the final campaign route.",
+    `Connect the lead capture form fields: ${input.leadCapture.fields.join(", ")}.`,
+    "Prepare someone to monitor new leads and respond quickly.",
+    `Load the ${input.followUpEmails.length}-email follow-up sequence into your email tool or CRM.`,
+  ];
+
+  if (goal.includes("demo")) {
+    tasks.push("Add a working demo booking calendar link to the landing page CTA.");
+  }
+
+  if (goal.includes("waitlist")) {
+    tasks.push("Connect the lead form to a waitlist spreadsheet or database.");
+  }
+
+  if (input.parsedBrief.missingInfo.length > 0) {
+    tasks.push(
+      `Resolve missing campaign info: ${input.parsedBrief.missingInfo.join(", ")}.`
+    );
+  }
+
+  if (input.platformDrafts.shortVideo.scenes.length > 0) {
+    tasks.push("Create or source visuals for the short-form video scene list.");
+  }
+
+  if (input.landingPage.faq.length > 0) {
+    tasks.push("Review FAQ answers for accuracy before the landing page goes live.");
+  }
+
+  return tasks.slice(0, 10);
 }
 
 export async function runCampaignWorkflow(
@@ -173,24 +218,22 @@ export async function runCampaignWorkflow(
       "Generated 3 follow-up emails."
     );
 
-    const taskResult = await generateJson<TaskResult>(
-      buildTaskPrompt({
-        parsedBrief: briefResult.parsedBrief,
-        selectedStrategy: strategyResult.selectedStrategy,
-        platformDrafts: platformResult.platformDrafts,
-        landingPage: landingResult.landingPage,
-        leadCapture: landingResult.leadCapture,
-        followUpEmails: emailResult.followUpEmails,
-      })
-    );
+    const localTasks = buildLocalLaunchTasks({
+      parsedBrief: briefResult.parsedBrief,
+      selectedStrategy: strategyResult.selectedStrategy,
+      platformDrafts: platformResult.platformDrafts,
+      landingPage: landingResult.landingPage,
+      leadCapture: landingResult.leadCapture,
+      followUpEmails: emailResult.followUpEmails,
+    });
 
-    assertMinimumArrayLength(taskResult.tasks, 6, "tasks");
+    assertMinimumArrayLength(localTasks, 6, "tasks");
 
     agentStages = updateStage(
       agentStages,
       "Launch Task Agent",
       "completed",
-      `Generated ${taskResult.tasks.length} launch tasks.`
+      `Generated ${localTasks.length} launch tasks locally.`
     );
 
     const claimSafety = runClaimSafetyCheck({
@@ -216,48 +259,48 @@ export async function runCampaignWorkflow(
     });
 
     const finalQaRepairResult = {
-  ...qaRepairResult,
-  qaReport:
-    qaRepairResult.repairs.length > 0
-      ? qaRepairResult.qaReport
-      : {
-          status: "repaired" as const,
-          issues: [
-            ...qaRepairResult.qaReport.issues,
-            "Demo audit found a safe-but-generic fallback headline and repaired it into the selected campaign angle.",
-          ],
-        },
-  repairs:
-    qaRepairResult.repairs.length > 0
-      ? qaRepairResult.repairs
-      : [
-          {
-            field: "landingPage.hero.headline",
-            before: "Simplify HR for your business.",
-            after: qaRepairResult.landingPage.hero.headline,
-            reason:
-              "The original fallback headline was too generic for a campaign demo. The repaired version uses the selected strategy, names the buyer pain, and feels more launch-ready.",
-          },
-        ],
-};
+      ...qaRepairResult,
+      qaReport:
+        qaRepairResult.repairs.length > 0
+          ? qaRepairResult.qaReport
+          : {
+              status: "repaired" as const,
+              issues: [
+                ...qaRepairResult.qaReport.issues,
+                "Demo audit found a safe-but-generic fallback headline and repaired it into the selected campaign angle.",
+              ],
+            },
+      repairs:
+        qaRepairResult.repairs.length > 0
+          ? qaRepairResult.repairs
+          : [
+              {
+                field: "landingPage.hero.headline",
+                before: "Simplify HR for your business.",
+                after: qaRepairResult.landingPage.hero.headline,
+                reason:
+                  "The original fallback headline was too generic for a campaign demo. The repaired version uses the selected strategy, names the buyer pain, and feels more launch-ready.",
+              },
+            ],
+    };
 
     agentStages = updateStage(
-  agentStages,
-  "QA Agent",
-  "completed",
-  finalQaRepairResult.qaReport.issues.length
-    ? `Found ${finalQaRepairResult.qaReport.issues.length} QA issue(s).`
-    : "No QA issues found."
-);
+      agentStages,
+      "QA Agent",
+      "completed",
+      finalQaRepairResult.qaReport.issues.length
+        ? `Found ${finalQaRepairResult.qaReport.issues.length} QA issue(s).`
+        : "No QA issues found."
+    );
 
-agentStages = updateStage(
-  agentStages,
-  "Repair Agent",
-  finalQaRepairResult.repairs.length ? "repaired" : "completed",
-  finalQaRepairResult.repairs.length
-    ? `Applied ${finalQaRepairResult.repairs.length} repair(s).`
-    : "No repairs needed."
-);
+    agentStages = updateStage(
+      agentStages,
+      "Repair Agent",
+      finalQaRepairResult.repairs.length ? "repaired" : "completed",
+      finalQaRepairResult.repairs.length
+        ? `Applied ${finalQaRepairResult.repairs.length} repair(s).`
+        : "No repairs needed."
+    );
 
     agentStages = updateStage(
       agentStages,
@@ -275,7 +318,7 @@ agentStages = updateStage(
       landingPage: finalQaRepairResult.landingPage,
       leadCapture: finalQaRepairResult.leadCapture,
       followUpEmails: emailResult.followUpEmails,
-      tasks: taskResult.tasks,
+      tasks: localTasks,
       qaReport: finalQaRepairResult.qaReport,
       claimSafety,
       repairs: finalQaRepairResult.repairs,

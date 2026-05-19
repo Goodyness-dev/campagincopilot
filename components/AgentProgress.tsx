@@ -53,7 +53,7 @@ function getBadgeStyle(status: AgentStage["status"]) {
 function getDotStyle(status: AgentStage["status"]) {
   if (status === "completed") return "bg-emerald-400";
   if (status === "repaired") return "bg-amber-400";
-  if (status === "running") return "bg-white";
+  if (status === "running") return "bg-white animate-pulse";
   if (status === "failed") return "bg-red-400";
 
   return "bg-neutral-700";
@@ -69,19 +69,19 @@ export default function AgentProgress({ stages }: { stages?: AgentStage[] }) {
   const percentage = Math.round((completedCount / agentStages.length) * 100);
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A] p-5">
+    <section className="w-full rounded-3xl border border-white/10 bg-[#0A0A0A] p-4 sm:p-5">
       <div className="mb-5 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-500 sm:text-xs">
             Agent Completion
           </p>
 
-          <h2 className="mt-2 text-xl font-semibold text-white">
+          <h2 className="mt-2 text-lg font-semibold leading-tight text-white sm:text-xl">
             {completedCount} of {agentStages.length} completed
           </h2>
         </div>
 
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-sm font-semibold text-white">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-white sm:text-sm">
           {percentage}%
         </div>
       </div>
@@ -93,35 +93,35 @@ export default function AgentProgress({ stages }: { stages?: AgentStage[] }) {
         />
       </div>
 
-      <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
         {agentStages.map((stage, index) => (
           <div
             key={`${stage.name}-${index}`}
-            className="rounded-2xl border border-white/10 bg-[#111111] p-4"
+            className="min-w-0 rounded-2xl border border-white/10 bg-[#111111] p-4"
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <span
                     className={`h-2 w-2 shrink-0 rounded-full ${getDotStyle(
                       stage.status
                     )}`}
                   />
 
-                  <p className="truncate text-sm font-medium text-white">
+                  <p className="min-w-0 break-words text-sm font-medium leading-5 text-white">
                     {stage.name}
                   </p>
                 </div>
 
                 {stage.outputSummary ? (
-                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-500">
+                  <p className="mt-2 line-clamp-3 break-words text-xs leading-5 text-neutral-500">
                     {stage.outputSummary}
                   </p>
                 ) : null}
               </div>
 
               <span
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${getBadgeStyle(
+                className={`w-fit shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${getBadgeStyle(
                   stage.status
                 )}`}
               >

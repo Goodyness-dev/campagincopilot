@@ -41,7 +41,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-[#0A0A0A] p-5">
+    <section className="min-w-0 rounded-3xl border border-white/10 bg-[#0A0A0A] p-4 sm:p-5">
       <div className="mb-5">
         <h2 className="text-lg font-semibold text-white">{title}</h2>
         {description ? (
@@ -64,7 +64,7 @@ function MiniCard({
   value: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-[#111111] p-4">
       <p className="text-xs font-medium uppercase tracking-[0.16em] text-neutral-500">
         {label}
       </p>
